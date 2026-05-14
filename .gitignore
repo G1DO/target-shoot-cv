@@ -1,0 +1,48 @@
+# AI workflow artifacts — never commit
+milestone_prompts/
+*.plan.md
+phase9_retrain_driver.m
+SUBMISSION_INVENTORY.md
+comparison_results.md
+
+# Heavy training data and experiment phases — not needed for demo
+data_driven/data/scraped/
+data_driven/data/synth/
+data_driven/data/team_labeled/
+data_driven/data/unified/
+data_driven/data/_robohit/
+data_driven/data/_unsorted_roboflow/
+data_driven/phase0/
+data_driven/phase1a/
+data_driven/phase1b/
+data_driven/phase1c/
+data_driven/phase1d/
+data_driven/phase2a/*
+!data_driven/phase2a/preprocessForDetector.m
+data_driven/phase2b/
+data_driven/phase4/
+data_driven/phase5/
+data_driven/phase7/
+data_driven/phase8/*
+!data_driven/phase8/detectAndScoreV8final.m
+!data_driven/phase8/detectAndScoreV8a.m
+data_driven/phase9/
+data_driven/plan_v*.md
+
+# Old/experimental detector variants — keep only production
+models/yolov2_v*.mat
+models/yolov2_scratch.mat
+models/yolov2_pretrained_v*.mat
+models/yolov4_*.mat
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+*.asv
+*.m~
+*.autosave
+.vscode/
+.idea/
+
+# Extract artifacts
+_extract_zips.bat
