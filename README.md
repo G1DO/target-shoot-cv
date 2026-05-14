@@ -16,11 +16,28 @@ Plus a unified GUI that exposes both approaches.
 
 ## Quick start
 
-1. Clone this repo:
-   `git clone https://github.com/G1DO/target-shoot-cv.git`
-2. Open MATLAB and `cd` into the cloned folder.
-3. Run `addpath(genpath(pwd))` once to put all subfolders on the path.
-4. Launch the GUI: type `ShootingTargetGUI_Unified` in the Command Window and press Enter.
+### Step 1 — clone the repo (terminal / shell)
+
+```bash
+git clone https://github.com/G1DO/target-shoot-cv.git
+cd target-shoot-cv
+```
+
+### Step 2 — launch the GUI (MATLAB Command Window)
+
+Open MATLAB, then run these three commands in the Command Window:
+
+```matlab
+cd('path\to\target-shoot-cv')
+addpath(genpath(pwd))
+ShootingTargetGUI_Unified
+```
+
+Replace `path\to\target-shoot-cv` with the actual folder you cloned into. For example:
+- Windows: `cd('C:\Users\YourName\Desktop\target-shoot-cv')`
+- macOS / Linux: `cd('/Users/YourName/Desktop/target-shoot-cv')`
+
+The first time you click the data-driven button, expect a 30 to 60 second pause — that is the YOLOv2 model loading and the deep learning runtime warming up. Subsequent clicks are fast.
 
 (If `ShootingTargetGUI_Unified.m` is not in the repo yet, run the older GUI `TargetScorerGUI` from `team_handcrafted/` for the hand-crafted demo, or `shootingTargetGUI` from `data_driven/phase6/` for the data-driven demo.)
 
