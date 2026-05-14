@@ -35,19 +35,19 @@ function ShootingTargetGUI_Unified()
     btnGrid.Layout.Row = 1;
     btnGrid.ColumnSpacing = 10;
 
-    uibutton(btnGrid, 'push', ...
+    btnSingle = uibutton(btnGrid, 'push', ...
         'Text', '1. BROWSE single image (HC + DD)', ...
         'FontSize', 13, 'FontWeight', 'bold', ...
         'ButtonPushedFcn', @onBrowseSingle);
-    uibutton(btnGrid, 'push', ...
+    btnAllHC = uibutton(btnGrid, 'push', ...
         'Text', '2. BROWSE ALL SEEN - Hand-Crafted', ...
         'FontSize', 13, 'FontWeight', 'bold', ...
         'ButtonPushedFcn', @onBrowseAllSeenHC);
-    uibutton(btnGrid, 'push', ...
+    btnAllDD = uibutton(btnGrid, 'push', ...
         'Text', '3. BROWSE ALL SEEN - Data-Driven', ...
         'FontSize', 13, 'FontWeight', 'bold', ...
         'ButtonPushedFcn', @onBrowseAllSeenDD);
-    uibutton(btnGrid, 'push', ...
+    btnCamera = uibutton(btnGrid, 'push', ...
         'Text', '4. ACQUIRE from camera (HC + DD)', ...
         'FontSize', 13, 'FontWeight', 'bold', ...
         'ButtonPushedFcn', @onAcquireCamera);
@@ -74,7 +74,9 @@ function ShootingTargetGUI_Unified()
     axDD = uiaxes(panelDD, 'Units', 'normalized', 'Position', [0.02 0.02 0.96 0.96]);
     axDD.XTick = []; axDD.YTick = []; axDD.Box = 'on';
 
-    state = struct('screenshotSaved', false);
+    state = struct('screenshotSaved', false, ...
+        'cameraActive', false, 'webcam', [], 'cameraTimer', []);
+    fig.CloseRequestFcn = @onClose;
 
     %% Callbacks
     function onBrowseSingle(~, ~)
@@ -171,12 +173,27 @@ function ShootingTargetGUI_Unified()
     end
 
     function onAcquireCamera(~, ~)
+        if state.cameraActive
+            % --- second click: TAKE SHOT ---
+            I = [];
+            try
+                I = snapshot(state.webcam);
+            catch ME
+                statusLabel.Text = ['Snapshot failed: ' ME.message];
+            end
+            stopCameraPreview();
+            if ~isempty(I)
+                runBoth(I, 'camera snapshot');
+            end
+            return;
+        end
+
+        % --- first click: start LIVE PREVIEW ---
         try
-            cam = webcam;
-            I = snapshot(cam);
-            clear cam;
-            sourceTag = 'camera snapshot';
-        catch
+            state.webcam = webcam;
+        catch ME
+            % Webcam unavailable - fall back to stub on first SEEN image.
+            statusLabel.Text = sprintf('Webcam unavailable (%s). Using stub image.', ME.message);
             if ~isempty(seenList)
                 I = imread(seenList{1}.path);
                 sourceTag = sprintf('camera stub: %s', seenList{1}.label);
@@ -184,8 +201,66 @@ function ShootingTargetGUI_Unified()
                 I = uint8(255 * ones(416, 416, 3));
                 sourceTag = 'camera stub: white image';
             end
+            runBoth(I, sourceTag);
+            return;
         end
-        runBoth(I, sourceTag);
+
+        state.cameraActive = true;
+        btnCamera.Text = 'TAKE SHOT (click to capture)';
+        btnCamera.BackgroundColor = [1 0.85 0.85];
+        btnSingle.Enable = 'off';
+        btnAllHC.Enable = 'off';
+        btnAllDD.Enable = 'off';
+        panelHC.Title = 'LIVE PREVIEW - frame yourself, then click TAKE SHOT';
+        panelDD.Title = 'Data-Driven  |  (waiting for shot)';
+        cla(axDD);
+        statusLabel.Text = 'Live camera preview running. Position the target, then click TAKE SHOT.';
+        drawnow;
+
+        state.cameraTimer = timer( ...
+            'Period', 0.1, ...
+            'ExecutionMode', 'fixedSpacing', ...
+            'BusyMode', 'drop', ...
+            'TimerFcn', @(~, ~) updatePreviewFrame());
+        start(state.cameraTimer);
+    end
+
+    function updatePreviewFrame()
+        if ~state.cameraActive || isempty(state.webcam)
+            return;
+        end
+        try
+            frame = snapshot(state.webcam);
+            showInAxes(axHC, frame);
+        catch
+            % Suppress per-frame errors so the preview keeps trying.
+        end
+    end
+
+    function stopCameraPreview()
+        if ~isempty(state.cameraTimer) && isvalid(state.cameraTimer)
+            stop(state.cameraTimer);
+            delete(state.cameraTimer);
+        end
+        state.cameraTimer = [];
+        if ~isempty(state.webcam)
+            try
+                delete(state.webcam);
+            catch
+            end
+            state.webcam = [];
+        end
+        state.cameraActive = false;
+        btnCamera.Text = '4. ACQUIRE from camera (HC + DD)';
+        btnCamera.BackgroundColor = [0.96 0.96 0.96];
+        btnSingle.Enable = 'on';
+        btnAllHC.Enable = 'on';
+        btnAllDD.Enable = 'on';
+    end
+
+    function onClose(~, ~)
+        stopCameraPreview();
+        delete(fig);
     end
 
     function runBoth(I, sourceTag)
